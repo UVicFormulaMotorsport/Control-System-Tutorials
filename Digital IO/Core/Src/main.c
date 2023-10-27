@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "stdio.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -50,6 +50,13 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 /* USER CODE BEGIN PFP */
 
+// https://www.youtube.com/watch?v=FDCI4yfovfw
+// ^ For printing using semihosting
+
+// Docmentation at
+// https://community.st.com/t5/stm32-mcus/how-to-use-semihosting-with-stm32cubeide-and-stm32/ta-p/49742
+
+extern void initialise_monitor_handles(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -73,7 +80,7 @@ int bool = 0;
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+  initialise_monitor_handles();
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -86,7 +93,7 @@ int bool = 0;
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   /* USER CODE BEGIN 2 */
-
+  printf("Hello World\n");
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -99,8 +106,9 @@ int bool = 0;
 	  if((!HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0)) && bool){
 		  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
 		  bool = 0;
+		  printf("Hello World\n");
 	  }
-	  HAL_Delay(10);
+	  //HAL_Delay(10);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -163,6 +171,7 @@ static void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(Green_LED_GPIO_Port, Green_LED_Pin, GPIO_PIN_RESET);
