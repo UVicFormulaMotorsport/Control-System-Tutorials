@@ -42,7 +42,9 @@
 /* Private variables ---------------------------------------------------------*/
 CAN_HandleTypeDef hcan2;
 
+
 /* USER CODE BEGIN PV */
+
 
 
 // We need to define the CAN transmit header
@@ -62,6 +64,9 @@ static void MX_GPIO_Init(void);
 static void MX_CAN2_Init(void);
 /* USER CODE BEGIN PFP */
 
+HAL_StatusTypeDef CANsend(CAN_HandleTypeDef *hcan, CAN_TxHeaderTypeDef *pTxHeader, uint8_t data[], uint32_t *pTxMailbox);
+
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -75,8 +80,18 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan2)
   }
 
   HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_13);
+  TxData[0] = RxData[0];
+  TxData[1] = RxData[1];
+  TxData[2] = RxData[2];
+
+  if (HAL_CAN_AddTxMessage(hcan2, &TxHeader, TxData, &TxMailbox) != HAL_OK)
+  	  {
+  		/* Transmission request Error */
+  		Error_Handler();
+  	  }
 
 }
+
 
 /* USER CODE END 0 */
 
@@ -114,7 +129,10 @@ int main(void)
   MX_CAN2_Init();
   /* USER CODE BEGIN 2 */
 
-
+  // HAL CAN requires the bits to be in an array
+//	  TxData[0] = 0x31; // register address
+	  TxData[1] = 0x12;
+	  TxData[2] = 0x34;
 
   /* USER CODE END 2 */
 
@@ -122,23 +140,22 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
-	  // HAL CAN requires the bits to be in an array
-	  TxData[0] = 0x31; // register address
-	  TxData[1] = 0x12;
-	  TxData[2] = 0x34;
-
-	  /* Start the Transmission process */
-	  // By using the HAL_CAN_ADD_TxMessage(args), a CAN message will try to be sent
-	  if (HAL_CAN_AddTxMessage(&hcan2, &TxHeader, TxData, &TxMailbox) != HAL_OK)
-	  {
-		/* Transmission request Error */
-		Error_Handler();
-	  }
+//
+//	  if(TxData[0] == 0x69)
+//		  TxData[0] = 0x33;
+//
+//	  /* Start the Transmission process */
+//	  // By using the HAL_CAN_ADD_TxMessage(args), a CAN message will try to be sent
+//	  if (HAL_CAN_AddTxMessage(&hcan2, &TxHeader, TxData, &TxMailbox) != HAL_OK)
+//	  {
+//		/* Transmission request Error */
+//		Error_Handler();
+//	  }
 
 	  // Blink a light to show a message has been sent
-	  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
-	  HAL_Delay(1000);
+	  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14,GPIO_PIN_SET);
+	  HAL_Delay(1);
+	  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14,GPIO_PIN_RESET);
 
     /* USER CODE END WHILE */
 
