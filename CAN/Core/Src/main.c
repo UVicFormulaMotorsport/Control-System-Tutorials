@@ -64,8 +64,6 @@ static void MX_GPIO_Init(void);
 static void MX_CAN2_Init(void);
 /* USER CODE BEGIN PFP */
 
-HAL_StatusTypeDef CANsend(CAN_HandleTypeDef *hcan, CAN_TxHeaderTypeDef *pTxHeader, uint8_t data[], uint32_t *pTxMailbox);
-
 
 /* USER CODE END PFP */
 
