@@ -42,15 +42,20 @@
 /* Private variables ---------------------------------------------------------*/
 CAN_HandleTypeDef hcan2;
 
+
 /* USER CODE BEGIN PV */
+
 
 
 // We need to define the CAN transmit header
 // & the array that will contain the data to transmit
 // & the mailbox where the data is added to before being sent
 CAN_TxHeaderTypeDef   TxHeader;
+CAN_RxHeaderTypeDef   RxHeader;
+
 uint8_t               TxData[8];
 uint32_t              TxMailbox;
+uint8_t               RxData[8];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -59,10 +64,32 @@ static void MX_GPIO_Init(void);
 static void MX_CAN2_Init(void);
 /* USER CODE BEGIN PFP */
 
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan2)
+{
+  if (HAL_CAN_GetRxMessage(hcan2, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_13);
+  TxData[0] = RxData[0];
+  TxData[1] = RxData[1];
+  TxData[2] = RxData[2];
+
+  if (HAL_CAN_AddTxMessage(hcan2, &TxHeader, TxData, &TxMailbox) != HAL_OK)
+  	  {
+  		/* Transmission request Error */
+  		Error_Handler();
+  	  }
+
+}
+
 
 /* USER CODE END 0 */
 
@@ -100,29 +127,33 @@ int main(void)
   MX_CAN2_Init();
   /* USER CODE BEGIN 2 */
 
+  // HAL CAN requires the bits to be in an array
+//	  TxData[0] = 0x31; // register address
+	  TxData[1] = 0x12;
+	  TxData[2] = 0x34;
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
-	  // HAL CAN requires the bits to be in an array
-	  TxData[0] = 0x31; // register address
-	  TxData[1] = 0x12;
-	  TxData[2] = 0x34;
-
-	  /* Start the Transmission process */
-	  // By using the HAL_CAN_ADD_TxMessage(args), a CAN message will try to be sent
-	  if (HAL_CAN_AddTxMessage(&hcan2, &TxHeader, TxData, &TxMailbox) != HAL_OK)
-	  {
-		/* Transmission request Error */
-		Error_Handler();
-	  }
+//
+//	  if(TxData[0] == 0x69)
+//		  TxData[0] = 0x33;
+//
+//	  /* Start the Transmission process */
+//	  // By using the HAL_CAN_ADD_TxMessage(args), a CAN message will try to be sent
+//	  if (HAL_CAN_AddTxMessage(&hcan2, &TxHeader, TxData, &TxMailbox) != HAL_OK)
+//	  {
+//		/* Transmission request Error */
+//		Error_Handler();
+//	  }
 
 	  // Blink a light to show a message has been sent
-	  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
-	  HAL_Delay(1000);
+	  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14,GPIO_PIN_SET);
+	  HAL_Delay(1);
+	  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14,GPIO_PIN_RESET);
 
     /* USER CODE END WHILE */
 
@@ -181,13 +212,13 @@ static void MX_CAN2_Init(void)
 {
 
   /* USER CODE BEGIN CAN2_Init 0 */
-	// Configure the GPIO pins for CAN1
+	// Configure the GPIO pins for CAN2
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
 	GPIO_InitStruct.Pin = GPIO_PIN_13 | GPIO_PIN_12;
 	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-	GPIO_InitStruct.Alternate = GPIO_AF9_CAN1;
+	GPIO_InitStruct.Alternate = GPIO_AF9_CAN2;
   /* USER CODE END CAN2_Init 0 */
 
   /* USER CODE BEGIN CAN2_Init 1 */
@@ -213,8 +244,42 @@ static void MX_CAN2_Init(void)
   }
   /* USER CODE BEGIN CAN2_Init 2 */
 
-  	/*##-2- Start the CAN peripheral ###########################################*/
+  // CAN Filter
+  CAN_FilterTypeDef FilterConfig;
 
+   TxHeader.DLC=1; //give message size of 1 byte
+   TxHeader.IDE=CAN_ID_STD; //set identifier to standard
+   TxHeader.RTR=CAN_RTR_DATA; //set data type to remote transmission request?
+   TxHeader.StdId=0x244; //define a standard identifier, used for message identification by filters (switch this for the other microcontroller)
+   TxHeader.ExtId = 0x01;
+   TxHeader.TransmitGlobalTime = DISABLE;
+
+  //filter one (stack light blink)
+   FilterConfig.FilterFIFOAssignment=CAN_RX_FIFO0; //set fifo assignment
+   FilterConfig.FilterIdHigh = 0x0000;
+   FilterConfig.FilterIdLow = 0x0000;
+   FilterConfig.FilterMaskIdHigh = 0x0000;
+   FilterConfig.FilterMaskIdLow = 0x0000;
+   FilterConfig.FilterScale=CAN_FILTERSCALE_32BIT; //set filter scale
+   FilterConfig.FilterActivation=ENABLE;
+   FilterConfig.FilterBank = 0;
+   FilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+   FilterConfig.SlaveStartFilterBank = 14;
+   FilterConfig.FilterBank = 14;
+   if (HAL_CAN_ConfigFilter(&hcan2, &FilterConfig) != HAL_OK)
+
+    {
+
+     /* Filter configuration Error */
+
+     Error_Handler();
+
+    }
+  	/*##-3- Start the CAN peripheral ###########################################*/
+	  if (HAL_CAN_ActivateNotification(&hcan2, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
+		 {
+		  Error_Handler();
+		 }
   	  // If HAL_CAN_Start returns an error, then we want to go into the error handler
     if (HAL_CAN_Start(&hcan2) != HAL_OK)
   	{
@@ -229,6 +294,9 @@ static void MX_CAN2_Init(void)
   	TxHeader.IDE = CAN_ID_STD;
   	TxHeader.DLC = 3;
   	TxHeader.TransmitGlobalTime = DISABLE;
+
+
+
 
   /* USER CODE END CAN2_Init 2 */
 
@@ -250,10 +318,10 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14|GPIO_PIN_15, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PD14 PD15 */
-  GPIO_InitStruct.Pin = GPIO_PIN_14|GPIO_PIN_15;
+  /*Configure GPIO pins : PD13 PD14 PD15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
