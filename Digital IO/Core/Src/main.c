@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "stdio.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,6 +49,7 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+void blink(GPIO_PIN_Letter, GPIO_PIN_Number);
 /* USER CODE BEGIN PFP */
 
 // https://www.youtube.com/watch?v=FDCI4yfovfw
@@ -93,7 +95,7 @@ int bool = 0;
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   /* USER CODE BEGIN 2 */
-  printf("Hello World\n");
+  printf("Hello World!\n");
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -104,11 +106,11 @@ int bool = 0;
 		  bool = 1;
 
 	  if((!HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0)) && bool){
-		  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
+		  blink(GPIOD, GPIO_PIN_12);
 		  bool = 0;
-		  printf("Hello World\n");
+		  printf("Hello World!\n");
 	  }
-	  //HAL_Delay(10);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
