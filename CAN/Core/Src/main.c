@@ -42,7 +42,6 @@
 /* Private variables ---------------------------------------------------------*/
 CAN_HandleTypeDef hcan2;
 
-
 /* USER CODE BEGIN PV */
 
 
@@ -77,16 +76,16 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan2)
     Error_Handler();
   }
 
-  HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_13);
-  TxData[0] = RxData[0];
-  TxData[1] = RxData[1];
-  TxData[2] = RxData[2];
-
-  if (HAL_CAN_AddTxMessage(hcan2, &TxHeader, TxData, &TxMailbox) != HAL_OK)
-  	  {
-  		/* Transmission request Error */
-  		Error_Handler();
-  	  }
+//  HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_13);
+//  TxData[0] = RxData[0];
+//  TxData[1] = RxData[1];
+//  TxData[2] = RxData[2];
+//
+//  if (HAL_CAN_AddTxMessage(hcan2, &TxHeader, TxData, &TxMailbox) != HAL_OK)
+//  	  {
+//  		/* Transmission request Error */
+//  		Error_Handler();
+//  	  }
 
 }
 
@@ -127,33 +126,43 @@ int main(void)
   MX_CAN2_Init();
   /* USER CODE BEGIN 2 */
 
-  // HAL CAN requires the bits to be in an array
-//	  TxData[0] = 0x31; // register address
-	  TxData[1] = 0x12;
-	  TxData[2] = 0x34;
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-//
-//	  if(TxData[0] == 0x69)
-//		  TxData[0] = 0x33;
-//
-//	  /* Start the Transmission process */
-//	  // By using the HAL_CAN_ADD_TxMessage(args), a CAN message will try to be sent
+
+	  // For PDU
+
+	  // Disable channel
+	  TxData[0] = 0x0C;
+
+
+	  /* Start the Transmission process */
+	  // By using the HAL_CAN_ADD_TxMessage(args), a CAN message will try to be sent
 //	  if (HAL_CAN_AddTxMessage(&hcan2, &TxHeader, TxData, &TxMailbox) != HAL_OK)
 //	  {
 //		/* Transmission request Error */
 //		Error_Handler();
 //	  }
+//	  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
+//	  HAL_Delay(100);
 
-	  // Blink a light to show a message has been sent
-	  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14,GPIO_PIN_SET);
-	  HAL_Delay(1);
-	  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14,GPIO_PIN_RESET);
+
+	  // Enable channel
+	  TxData[0] = 0x1C;
+
+	  /* Start the Transmission process */
+	  // By using the HAL_CAN_ADD_TxMessage(args), a CAN message will try to be sent
+	  if (HAL_CAN_AddTxMessage(&hcan2, &TxHeader, TxData, &TxMailbox) != HAL_OK)
+	  {
+		/* Transmission request Error */
+		Error_Handler();
+	  }
+	  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
+	  HAL_Delay(100);
+
 
     /* USER CODE END WHILE */
 
@@ -227,11 +236,11 @@ static void MX_CAN2_Init(void)
 	HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
   /* USER CODE END CAN2_Init 1 */
   hcan2.Instance = CAN2;
-  hcan2.Init.Prescaler = 2;
+  hcan2.Init.Prescaler = 4;
   hcan2.Init.Mode = CAN_MODE_NORMAL;
   hcan2.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan2.Init.TimeSeg1 = CAN_BS1_13TQ;
-  hcan2.Init.TimeSeg2 = CAN_BS2_2TQ;
+  hcan2.Init.TimeSeg1 = CAN_BS1_8TQ;
+  hcan2.Init.TimeSeg2 = CAN_BS2_7TQ;
   hcan2.Init.TimeTriggeredMode = DISABLE;
   hcan2.Init.AutoBusOff = DISABLE;
   hcan2.Init.AutoWakeUp = DISABLE;
@@ -288,11 +297,11 @@ static void MX_CAN2_Init(void)
   	}
   	//Configure transmission process
     // This is where we set the ID and data length and other misc. CAN bits
-  	TxHeader.StdId = 0x201;
+  	TxHeader.StdId = 0x710;
   	TxHeader.ExtId = 0x01;
   	TxHeader.RTR = CAN_RTR_DATA;
   	TxHeader.IDE = CAN_ID_STD;
-  	TxHeader.DLC = 3;
+  	TxHeader.DLC = 1;
   	TxHeader.TransmitGlobalTime = DISABLE;
 
 
