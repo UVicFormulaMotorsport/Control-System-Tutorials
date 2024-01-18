@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -64,7 +65,7 @@ void SystemClock_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+	 uint16_t timer_val;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -85,7 +86,16 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_TIM13_Init();
+  MX_TIM14_Init();
   /* USER CODE BEGIN 2 */
+
+  // Start timer
+    HAL_TIM_Base_Start(&htim13);
+
+    // Get current time (microseconds)
+    timer_val = __HAL_TIM_GET_COUNTER(&htim13);
+
 
   /* USER CODE END 2 */
 
@@ -93,6 +103,12 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  // If enough time has passed (1 second), toggle LED and get new timestamp
+	     if (__HAL_TIM_GET_COUNTER(&htim13) - timer_val >= 10000)
+	     {
+	       HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
+	       timer_val = __HAL_TIM_GET_COUNTER(&htim13);
+	     }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -138,7 +154,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV4;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
   {
