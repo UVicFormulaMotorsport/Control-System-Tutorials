@@ -65,7 +65,8 @@ void SystemClock_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	 uint16_t timer_val;
+	 uint16_t timer13_val; // polling timer
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -93,8 +94,11 @@ int main(void)
   // Start timer
     HAL_TIM_Base_Start(&htim13);
 
+    // Start timer
+      HAL_TIM_Base_Start_IT(&htim14);
+
     // Get current time (microseconds)
-    timer_val = __HAL_TIM_GET_COUNTER(&htim13);
+    timer13_val = __HAL_TIM_GET_COUNTER(&htim13);
 
 
   /* USER CODE END 2 */
@@ -104,10 +108,10 @@ int main(void)
   while (1)
   {
 	  // If enough time has passed (1 second), toggle LED and get new timestamp
-	     if (__HAL_TIM_GET_COUNTER(&htim13) - timer_val >= 10000)
+	     if (__HAL_TIM_GET_COUNTER(&htim13) - timer13_val >= 10000)
 	     {
 	       HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
-	       timer_val = __HAL_TIM_GET_COUNTER(&htim13);
+	       timer13_val = __HAL_TIM_GET_COUNTER(&htim13);
 	     }
     /* USER CODE END WHILE */
 
@@ -163,6 +167,16 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+// Callback: timer has rolled over
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  // Check which version of the timer triggered this callback and toggle LED
+  if (htim == &htim14 )
+  {
+    HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
+  }
+}
 
 /* USER CODE END 4 */
 
